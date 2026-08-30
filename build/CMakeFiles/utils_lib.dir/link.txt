@@ -1,0 +1,2 @@
+/usr/bin/ar qc libutils_lib.a CMakeFiles/utils_lib.dir/src/utils/UniformDoubleGenerator.cpp.o CMakeFiles/utils_lib.dir/src/utils/UniformIntGenerator.cpp.o
+/usr/bin/ranlib libutils_lib.a

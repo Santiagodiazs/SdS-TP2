@@ -1,0 +1,2 @@
+/usr/bin/ar qc libboard_generation_lib.a CMakeFiles/board_generation_lib.dir/src/board_generation/Particle.cpp.o CMakeFiles/board_generation_lib.dir/src/board_generation/Tablero.cpp.o
+/usr/bin/ranlib libboard_generation_lib.a

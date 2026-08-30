@@ -1,0 +1,9 @@
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/CMakeFiles/utils_lib.dir
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/CMakeFiles/board_generation_lib.dir
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/CMakeFiles/cell_index_method_lib.dir
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/CMakeFiles/cellular_automata_lib.dir
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/apps/cellular_automata/CMakeFiles/cellular_automata_app.dir
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/apps/cellular_automata/CMakeFiles/edit_cache.dir
+/mnt/c/Users/rluca/ITBA/SS/ss-tp2/build/apps/cellular_automata/CMakeFiles/rebuild_cache.dir

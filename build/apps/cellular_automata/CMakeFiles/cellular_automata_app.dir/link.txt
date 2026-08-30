@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/cellular_automata_app.dir/main.cpp.o -o cellular_automata_app  ../../libcellular_automata_lib.a ../../libcell_index_method_lib.a ../../libboard_generation_lib.a ../../libutils_lib.a 
