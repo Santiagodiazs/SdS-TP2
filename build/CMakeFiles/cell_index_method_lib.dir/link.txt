@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcell_index_method_lib.a CMakeFiles/cell_index_method_lib.dir/src/cell_index_method/ParticleSystem.cpp.o
-/usr/bin/ranlib libcell_index_method_lib.a

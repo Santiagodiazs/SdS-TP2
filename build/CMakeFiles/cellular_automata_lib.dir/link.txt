@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcellular_automata_lib.a CMakeFiles/cellular_automata_lib.dir/src/cellular_automata/CellularAutomataSystem.cpp.o CMakeFiles/cellular_automata_lib.dir/src/cellular_automata/VicsekRule.cpp.o CMakeFiles/cellular_automata_lib.dir/src/cellular_automata/VoterRule.cpp.o
-/usr/bin/ranlib libcellular_automata_lib.a
