@@ -10,7 +10,7 @@ coloreado segun el angulo de su velocidad (colormap ciclico, porque el
 angulo es periodico: 0 y 2*pi son el mismo color).
 
 Uso:
-    python cellular_automata_visualizer.py resources/frames.txt [salida.mp4] [--stride N]
+    python cellular_automata_visualizer.py resources/frames.txt [salida.mp4] [--stride N] [--interval MS]
 """
 
 import sys
@@ -84,23 +84,33 @@ def animate_frames(frames, length, output_path=None, interval_ms=50):
 
 def main():
     if len(sys.argv) < 2:
-        print("Uso: python cellular_automata_visualizer.py <ruta_a_frames.txt> [salida.mp4|salida.gif] [--stride N]")
+        print("Uso: python cellular_automata_visualizer.py <ruta_a_frames.txt> [salida.mp4|salida.gif] [--stride N] [--interval MS]")
         sys.exit(1)
 
     input_path = Path(sys.argv[1])
     output_path = None
     stride = 1
+    interval_ms = 50
     arguments = sys.argv[2:]
     if arguments and not arguments[0].startswith("--"):
         output_path = arguments.pop(0)
-    if arguments:
-        if len(arguments) != 2 or arguments[0] != "--stride":
-            print("Argumentos invalidos. Usar --stride N.", file=sys.stderr)
+    while arguments:
+        option = arguments.pop(0)
+        if not arguments or option not in {"--stride", "--interval"}:
+            print("Argumentos invalidos. Usar --stride N y/o --interval MS.", file=sys.stderr)
             sys.exit(1)
-        stride = int(arguments[1])
-        if stride < 1:
-            print("El stride debe ser mayor o igual a 1.", file=sys.stderr)
-            sys.exit(1)
+        value = int(arguments.pop(0))
+        if option == "--stride":
+            stride = value
+        else:
+            interval_ms = value
+
+    if stride < 1:
+        print("El stride debe ser mayor o igual a 1.", file=sys.stderr)
+        sys.exit(1)
+    if interval_ms < 1:
+        print("El intervalo debe ser mayor o igual a 1 ms.", file=sys.stderr)
+        sys.exit(1)
 
     frames = parse_frames(input_path)
     print(f"{len(frames)} frames leidos de {input_path}")
@@ -110,7 +120,7 @@ def main():
         sys.exit(1)
 
     frames = frames[::stride]
-    animate_frames(frames, LENGTH, output_path)
+    animate_frames(frames, LENGTH, output_path, interval_ms=interval_ms)
 
 
 if __name__ == "__main__":

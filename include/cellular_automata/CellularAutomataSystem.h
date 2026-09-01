@@ -20,7 +20,8 @@ public:
         double interactionRadius, 
         double noise, int steps, 
         UpdateRule* updateRule, 
-        bool periodicBoundary
+        bool periodicBoundary,
+        int subsquareCountOverride = 0
     );
 
     void step();
@@ -44,7 +45,8 @@ private:
     std::vector<board_generation::Particle> particles;
     cell_index_method::ParticleSystem particleSystem;
 
-    static int computeSubsquareCount(int length, double interactionRadius, bool periodicBoundary);
+    static int computeSubsquareCount(int length, double interactionRadius, bool periodicBoundary,
+                                     int subsquareCountOverride = 0);
     static std::vector<board_generation::Particle> generateParticles(int count, int length);
 };
 }

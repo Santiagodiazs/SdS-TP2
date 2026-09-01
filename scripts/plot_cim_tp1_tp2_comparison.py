@@ -33,19 +33,21 @@ def main():
     args = parser.parse_args()
 
     series = [
-        ("CIM (TP1)", load_tp1(args.tp1_csv), "o", "tab:blue"),
-        ("CIM (TP2)", load_tp2(args.tp2_csv, "CIM"), "s", "tab:green"),
-        ("Fuerza bruta (TP2)", load_tp2(args.tp2_csv, "BRUTE_FORCE"), "^", "tab:red"),
+        ("CIM (TP1)", load_tp1(args.tp1_csv), "s", "tab:red", "--"),
+        ("CIM (TP2)", load_tp2(args.tp2_csv, "CIM"), "o", "tab:blue", "-"),
+        ("Fuerza bruta (TP2)", load_tp2(args.tp2_csv, "BRUTE_FORCE"), "^", "tab:gray", "-"),
     ]
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    for label, data, marker, color in series:
+    for label, data, marker, color, linestyle in series:
         ax.errorbar(data["N"], data["mean_ms"], yerr=data["std_ms"], marker=marker,
-                    color=color, capsize=3, label=label)
+                    color=color, linestyle=linestyle, capsize=3, label=label)
 
+    ax.set_xscale("log")
+    ax.set_yscale("log")
     ax.set_xlabel("Numero de particulas (N)")
     ax.set_ylabel("Tiempo de busqueda promedio (ms)")
-    ax.set_title("Comparacion de tiempos de busqueda")
+    ax.set_title("Comparacion de tiempos de busqueda (L=20, r_c=1, M=13)")
     ax.legend()
     ax.grid(alpha=0.2)
     fig.tight_layout()

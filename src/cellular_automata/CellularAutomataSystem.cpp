@@ -32,8 +32,14 @@ struct DisjointSet {
 
 namespace cellular_automata {
 
-int CellularAutomataSystem::computeSubsquareCount(int length, double interactionRadius, bool periodicBoundary) {
-    int subsquareCount = static_cast<int>(length / interactionRadius);
+int CellularAutomataSystem::computeSubsquareCount(int length, double interactionRadius, bool periodicBoundary,
+                                                   int subsquareCountOverride) {
+    int subsquareCount = subsquareCountOverride > 0
+        ? subsquareCountOverride
+        : static_cast<int>(length / interactionRadius);
+    if (subsquareCount < 1) {
+        throw std::invalid_argument("La cantidad de subcuadrados debe ser positiva");
+    }
     if (periodicBoundary && subsquareCount == 2) {
         throw std::invalid_argument(
             "Invalid subsquare count, try other length and interaction radius combination");
@@ -58,7 +64,8 @@ CellularAutomataSystem::CellularAutomataSystem(int length,
                                             double noise, 
                                             int steps, 
                                             cellular_automata::UpdateRule* updateRule, 
-                                            bool periodicBoundary)
+                                            bool periodicBoundary,
+                                            int subsquareCountOverride)
     : length(length),
       particleCount(particleCount),
       interactionRadius(interactionRadius),
@@ -66,7 +73,8 @@ CellularAutomataSystem::CellularAutomataSystem(int length,
       steps(steps),
       updateRule(updateRule),
       periodicBoundary(periodicBoundary),
-      subsquareCount(computeSubsquareCount(length, interactionRadius, periodicBoundary)),
+      subsquareCount(computeSubsquareCount(length, interactionRadius, periodicBoundary,
+                                            subsquareCountOverride)),
       particles(generateParticles(particleCount, length)),
       particleSystem(particles, PARTICLE_RADIUS, particleCount, length,
                      subsquareCount, interactionRadius, true) { }

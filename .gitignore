@@ -659,17 +659,9 @@ FodyWeavers.xsd
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,visualstudiocode,python,c++,windows,cmake
 
 resources/*
-!resources/benchmark_reference/
-!resources/benchmark_reference/variacion_N_densidad_libre_tp1.csv
 
 *.gif
 *.png
 *.csv
 build/*
 tp2_resultados/*
-
-# Referencia de TP1 incluida deliberadamente para que el benchmark de TP2 sea
-# reproducible sin requerir el repositorio del trabajo práctico anterior.
-!resources/
-!resources/benchmark_reference/
-!resources/benchmark_reference/variacion_N_densidad_libre_tp1.csv

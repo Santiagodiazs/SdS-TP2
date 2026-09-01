@@ -92,6 +92,10 @@ Para guardar en vez de mostrar en pantalla (requiere `ffmpeg` para `.mp4`, o sol
 ```bash
 python3 scripts/cellular_automata_visualizer.py resources/frames.txt salida.gif
 ```
+Podés reducir la velocidad y conservar más pasos, por ejemplo:
+```bash
+python3 scripts/cellular_automata_visualizer.py resources/frames.txt salida.gif --stride 10 --interval 100
+```
 
 ## 4. Ver evolución temporal de los observables (v_a, S)
 
@@ -164,6 +168,12 @@ bash scripts/generar_entregables_tp2.sh mis_resultados
 
 El script requiere `cmake`, `g++`, `python3`, y los paquetes `numpy`, `pandas`,
 `matplotlib` y `pillow` en el entorno WSL.
+
+Para regenerar solo el punto (g), incluyendo el benchmark de TP1 desde cero:
+```bash
+bash scripts/generar_benchmark_comparativo.sh
+```
+Por defecto busca TP1 en `../ss-tp1`; se puede cambiar con `TP1_ROOT`.
 
 ## Orden recomendado para armar todo el TP
 

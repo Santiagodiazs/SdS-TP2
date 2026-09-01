@@ -26,7 +26,9 @@ void printUsage(const char* programName) {
               << "  --no-frames                No guarda frames; util para barridos largos\n"
               << "  --benchmark                Mide tiempos de CIM en vez de correr la simulacion\n"
               << "  --benchmark-algorithm <cim|brute>  Algoritmo a medir (default: cim)\n"
+              << "  --benchmark-subsquares <M>  M fijo para el benchmark (default: L/r_c)\n"
               << "  --repetitions <n>          Cantidad de repeticiones del benchmark (default: 30)\n"
+              << "  --warmup <n>               Corridas previas no medidas (default: 30)\n"
               << std::endl;
 }
 
@@ -85,6 +87,9 @@ int main(int argc, char** argv) {
 
         if (hasArg(argc, argv, "--benchmark")) {
             int repetitions = std::stoi(getArgOrDefault(argc, argv, "--repetitions", "30"));
+            int warmup = std::stoi(getArgOrDefault(argc, argv, "--warmup", "30"));
+            int benchmarkSubsquareCount = std::stoi(
+                getArgOrDefault(argc, argv, "--benchmark-subsquares", "0"));
             std::string benchmarkPath = getArgOrDefault(argc, argv, "--output", "resources/cim_benchmark.csv");
             std::string benchmarkAlgorithm = getArgOrDefault(argc, argv, "--benchmark-algorithm", "cim");
             cell_index_method::AlgorithmType algorithmType;
@@ -107,17 +112,21 @@ int main(int argc, char** argv) {
                 out << "N,length,radius,algorithm,rep,time_ns\n";
             }
 
+            cellular_automata::CellularAutomataSystem benchSystem(
+                length, particleCount, interactionRadius, noise, steps,
+                updateRule.get(), /*periodicBoundary=*/true, benchmarkSubsquareCount
+            );
+            for (int i = 0; i < warmup; i++) {
+                benchSystem.benchmark(algorithmType);
+            }
             for (int rep = 0; rep < repetitions; rep++) {
-                cellular_automata::CellularAutomataSystem benchSystem(
-                    length, particleCount, interactionRadius, noise, steps,
-                    updateRule.get(), /*periodicBoundary=*/true
-                );
                 long long ns = benchSystem.benchmark(algorithmType);
                 out << particleCount << "," << length << "," << interactionRadius << ","
                     << algorithmLabel << "," << rep << "," << ns << "\n";
             }
 
-            std::cout << "Benchmark " << algorithmLabel << ": " << repetitions << " repeticiones para N=" << particleCount
+            std::cout << "Benchmark " << algorithmLabel << ": " << repetitions << " repeticiones (" << warmup
+                    << " warm-up) para N=" << particleCount
                     << " guardadas en " << benchmarkPath << std::endl;
             return 0;
         }

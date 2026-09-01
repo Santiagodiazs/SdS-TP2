@@ -17,10 +17,15 @@ fi
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 STEPS="${STEPS:-2000}"
 REPETITIONS="${REPETITIONS:-30}"
-CHARACTERISTIC_NOISE="${CHARACTERISTIC_NOISE:-2.5}"
-ANIMATION_STRIDE="${ANIMATION_STRIDE:-20}"
+CHARACTERISTIC_NOISE="${CHARACTERISTIC_NOISE:-1}"
+# Con 2000 pasos: stride 10 produce 200 cuadros, de los cuales alrededor de
+# la mitad corresponden al régimen estacionario. 100 ms da un GIF legible.
+ANIMATION_STRIDE="${ANIMATION_STRIDE:-10}"
+ANIMATION_INTERVAL_MS="${ANIMATION_INTERVAL_MS:-100}"
 EXECUTABLE="$ROOT/build/apps/cellular_automata/cellular_automata_app"
-TP1_REFERENCE="$ROOT/resources/benchmark_reference/variacion_N_densidad_libre_tp1.csv"
+TP1_ROOT="${TP1_ROOT:-$ROOT/../ss-tp1}"
+TP1_RUNS="${TP1_RUNS:-5}"
+TP1_WARMUP="${TP1_WARMUP:-30}"
 
 require_command() {
     command -v "$1" >/dev/null 2>&1 || {
@@ -32,7 +37,10 @@ require_command() {
 require_command cmake
 require_command g++
 require_command "$PYTHON_BIN"
-[[ -f "$TP1_REFERENCE" ]] || { echo "No se encontro la referencia local de TP1: $TP1_REFERENCE" >&2; exit 1; }
+[[ -d "$TP1_ROOT" ]] || {
+    echo "No se encontro TP1 en $TP1_ROOT. Indicar TP1_ROOT=/ruta/a/ss-tp1." >&2
+    exit 1
+}
 "$PYTHON_BIN" -c 'import numpy, pandas, matplotlib, PIL' || {
     echo "Instala las dependencias: python3 -m pip install numpy pandas matplotlib pillow" >&2
     exit 1
@@ -78,7 +86,7 @@ run_characteristic_case() {
     "$PYTHON_BIN" scripts/cellular_automata_visualizer.py \
         "$case_dir/frames.txt" \
         "$OUTPUT_DIR/animaciones/${model}_rho${density}.gif" \
-        --stride "$ANIMATION_STRIDE"
+        --stride "$ANIMATION_STRIDE" --interval "$ANIMATION_INTERVAL_MS"
 }
 
 echo "==> Corridas caracteristicas, evoluciones temporales y animaciones"
@@ -108,32 +116,24 @@ for model in vicsek voter; do
 done
 "$PYTHON_BIN" scripts/cellular_automata_temporal_model_comparison.py "${comparison_args[@]}"
 
-echo "==> Benchmark TP2: CIM y fuerza bruta para los N de referencia de TP1"
-TP1_CSV="$OUTPUT_DIR/benchmark/variacion_N_densidad_libre_tp1.csv"
-cp "$TP1_REFERENCE" "$TP1_CSV"
-
-if [[ -n "${BENCHMARK_PARTICLES:-}" ]]; then
-    read -r -a BENCHMARK_N_VALUES <<< "$BENCHMARK_PARTICLES"
-else
-    mapfile -t BENCHMARK_N_VALUES < <("$PYTHON_BIN" -c \
-        "import pandas as pd; d = pd.read_csv(r'$TP1_CSV'); print(*sorted(d.N.unique()), sep='\\n')")
-fi
-
-BENCHMARK_FILE="$OUTPUT_DIR/benchmark/cim_tp2.csv"
-: > "$BENCHMARK_FILE"
-for algorithm in cim brute; do
-    for particles in "${BENCHMARK_N_VALUES[@]}"; do
-        "$EXECUTABLE" --benchmark --benchmark-algorithm "$algorithm" \
-            --particles "$particles" --length 10 --radius 1.0 \
-            --repetitions "$REPETITIONS" --output "$BENCHMARK_FILE"
+echo "==> Evoluciones temporales combinadas: v_a(t) y S(t), una figura por densidad"
+per_density_args=("$OUTPUT_DIR/evoluciones/por_densidad")
+for density in "${DENSITIES[@]}"; do
+    for model in vicsek voter; do
+        per_density_args+=(--series "$density" "$model" \
+            "$OUTPUT_DIR/datos_caracteristicos/${model}_rho${density}_eta${CHARACTERISTIC_NOISE}/observables.txt")
     done
 done
-"$PYTHON_BIN" scripts/plot_cim_tp1_tp2_comparison.py \
-    "$TP1_CSV" "$BENCHMARK_FILE" "$OUTPUT_DIR/benchmark/comparacion_tiempos_busqueda.png"
+"$PYTHON_BIN" scripts/cellular_automata_temporal_per_density.py "${per_density_args[@]}"
+
+echo "==> Benchmark comparativo: TP1 desde cero, CIM TP2 y fuerza bruta TP2"
+TP1_ROOT="$TP1_ROOT" PYTHON_BIN="$PYTHON_BIN" REPETITIONS="$TP1_RUNS" WARMUP="$TP1_WARMUP" \
+    bash scripts/generar_benchmark_comparativo.sh "$OUTPUT_DIR/benchmark"
 
 cat <<EOF
 
 Resultados generados en: $OUTPUT_DIR
+  - Benchmark comparativo: $OUTPUT_DIR/benchmark/comparacion_tiempos_busqueda.png
 
 Todavia queda trabajo de presentacion/informe:
   - elegir cuales GIFs y evoluciones temporales son las mas representativas;
