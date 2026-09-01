@@ -1,6 +1,10 @@
 #pragma once
 
+#include <stdexcept>
+#include <cmath>
 #include <vector>
+#include <fstream>
+#include <string>
 
 #include <cellular_automata/UpdateRule.h>
 #include <board_generation/Particle.h>
@@ -20,12 +24,13 @@ public:
     );
 
     void step();
-    void run(int steps);
+    void run(int steps, const std::string& outputDirectory = "resources/",
+             bool writeFrames = true);
     double cumputeOrderParameter();
     double computeLargestClusterFraction();
     void writeFrame(std::ofstream* stream);
     void writeObservablesLog(std::ofstream* stream, int t);
-
+    long long benchmark(cell_index_method::AlgorithmType algorithmType);
 private:
     int length;
     int particleCount;

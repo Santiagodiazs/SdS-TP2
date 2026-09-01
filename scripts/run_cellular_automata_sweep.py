@@ -22,14 +22,19 @@ tiene sentido paralelizar esto con concurrent.futures.
 """
 
 import csv
+import os
 import subprocess
 import sys
+import math
 from pathlib import Path
 
 import numpy as np
 
 EXECUTABLE = Path("build/apps/cellular_automata/cellular_automata_app")
-OBSERVABLES_PATH = Path("resources/observables.txt")
+# Permite que el wrapper de entrega aisle los archivos transitorios del sweep.
+# Si no se define, conserva el comportamiento historico en resources/.
+OUTPUT_DIRECTORY = Path(os.environ.get("TP2_SWEEP_OUTPUT", "resources"))
+OBSERVABLES_PATH = OUTPUT_DIRECTORY / "observables.txt"
 
 LENGTH = 10
 INTERACTION_RADIUS = 1.0
@@ -37,7 +42,7 @@ STEPS = 2000
 SEEDS_PER_POINT = 5
 BURN_IN_FRACTION = 0.5  # se descarta el primer 50% de los steps como transitorio
 
-DENSITIES = [2, 4, 8]
+DENSITIES = [1/math.pi, 1/(2*math.pi), 1/(3*math.pi), 2, 4, 8]
 NOISES = np.linspace(0.0, 5.0, 11)
 MODELS = ["vicsek", "voter"]
 
@@ -52,6 +57,8 @@ def run_simulation(model: str, density: float, noise: float, steps: int) -> None
         "--radius", str(INTERACTION_RADIUS),
         "--noise", str(noise),
         "--steps", str(steps),
+        "--output", str(OUTPUT_DIRECTORY),
+        "--no-frames",
     ]
     result = subprocess.run(args, capture_output=True, text=True)
     if result.returncode != 0:
@@ -99,6 +106,7 @@ def main():
         print(f"No se encontro el ejecutable en {EXECUTABLE}. Compila el proyecto primero.", file=sys.stderr)
         sys.exit(1)
 
+    OUTPUT_DIRECTORY.mkdir(parents=True, exist_ok=True)
     rows = []
     total_runs = len(MODELS) * len(DENSITIES) * len(NOISES) * SEEDS_PER_POINT
     run_count = 0

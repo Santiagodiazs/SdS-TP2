@@ -75,6 +75,7 @@ a `resources/frames.txt` y `resources/observables.txt` con paths relativos:
 | `--radius`     | Radio de interacción (r_c)                                 | `1.0`     |
 | `--noise`      | Amplitud de ruido (η)                                      | `0.1`     |
 | `--steps`      | Cantidad de pasos de simulación                            | `1000`    |
+| `--no-frames`  | No guarda frames; recomendado para barridos largos         | —         |
 | `--help`       | Muestra la ayuda                                            | —         |
 
 Salida generada en `resources/`:
@@ -148,6 +149,22 @@ Genera en `resources/graficos/`:
 Si se omite el segundo argumento, los gráficos se muestran en pantalla en vez de
 guardarse a archivo.
 
+## Pipeline completo para el TP
+
+Desde WSL se puede generar todo el material experimental con un solo comando:
+```bash
+bash scripts/generar_entregables_tp2.sh
+```
+Genera en `tp2_resultados/` el resumen del sweep, los gráficos, corridas
+características (Vicsek y votante para cada densidad), sus evoluciones temporales,
+animaciones GIF y el benchmark del CIM. Se puede elegir otro directorio de salida:
+```bash
+bash scripts/generar_entregables_tp2.sh mis_resultados
+```
+
+El script requiere `cmake`, `g++`, `python3`, y los paquetes `numpy`, `pandas`,
+`matplotlib` y `pillow` en el entorno WSL.
+
 ## Orden recomendado para armar todo el TP
 
 1. Compilar (paso 1).
@@ -164,13 +181,10 @@ guardarse a archivo.
 
 ## Problemas conocidos / limitaciones actuales
 
-- El binario no permite elegir el nombre de los archivos de salida — corridas
-  sucesivas pisan `resources/frames.txt` y `resources/observables.txt`. Si querés
-  conservar una corrida particular, copiá el archivo a otro nombre antes de
-  correr la siguiente.
 - No hay forma de fijar semilla del generador aleatorio desde la línea de comandos
   — cada corrida usa una semilla distinta automáticamente (útil para "varias
   realizaciones", pero no reproducible bit a bit si necesitás repetir *exactamente*
   la misma corrida).
-- El punto (g) del TP (comparación de tiempos de CIM contra TP1) no tiene un modo
-  dedicado en `main.cpp` todavía.
+- El benchmark incluye como referencia local los datos de TP1 y genera la figura
+  comparativa CIM TP1 vs CIM TP2 vs fuerza bruta TP2. La discusión de los
+  resultados debe hacerse en el informe.

@@ -20,6 +20,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 MARKERS = ["o", "s", "^", "D", "v"]
+VA_VS_S_ERROR_ALPHA = 0.28
 
 
 def load_summary(path: Path) -> pd.DataFrame:
@@ -75,11 +76,18 @@ def plot_va_vs_s(df: pd.DataFrame, model: str, output_path=None):
     subset = df[df["model"] == model]
 
     for i, density in enumerate(sorted(subset["density"].unique())):
-        density_data = subset[subset["density"] == density]
+        # Unir los puntos en orden creciente de eta muestra la trayectoria
+        # del sistema en el plano (S, v_a) para cada densidad.
+        density_data = subset[subset["density"] == density].sort_values("noise")
+        line, = ax.plot(density_data["s_avg"], density_data["va_avg"],
+                        marker=MARKERS[i % len(MARKERS)], linestyle="-",
+                        label=f"rho={density}", zorder=2)
+        # Las barras se atenúan para que indiquen la dispersión sin ocultar
+        # la trayectoria central ni los marcadores.
         ax.errorbar(density_data["s_avg"], density_data["va_avg"],
                     xerr=density_data["s_err"], yerr=density_data["va_err"],
-                    marker=MARKERS[i % len(MARKERS)], linestyle="none",
-                    label=f"rho={density}", capsize=3)
+                    fmt="none", ecolor=line.get_color(), alpha=VA_VS_S_ERROR_ALPHA,
+                    elinewidth=1, capsize=3, zorder=1)
 
     ax.set_xlabel("Fraccion del cluster mas grande (S)")
     ax.set_ylabel("Parametro de orden (v_a)")
@@ -111,6 +119,36 @@ def plot_model_comparison(df: pd.DataFrame, density: float, value_col: str, err_
     ax.legend()
     fig.tight_layout()
 
+    if output_path:
+        fig.savefig(output_path, dpi=150)
+        print(f"Guardado: {output_path}")
+    else:
+        plt.show()
+    plt.close(fig)
+
+
+def plot_va_vs_s_model_comparison(df: pd.DataFrame, output_path=None):
+    """Punto (f): compara ambos modelos en el plano (S, v_a)."""
+    fig, ax = plt.subplots(figsize=(8, 6))
+    line_styles = {"vicsek": "-", "voter": "--"}
+    colors = {density: f"C{i}" for i, density in enumerate(sorted(df["density"].unique()))}
+
+    for density in sorted(df["density"].unique()):
+        for model in sorted(df["model"].unique()):
+            density_data = df[(df["density"] == density) & (df["model"] == model)].sort_values("noise")
+            line, = ax.plot(density_data["s_avg"], density_data["va_avg"],
+                            color=colors[density], linestyle=line_styles[model], marker="o",
+                            label=f"{model}, rho={density}", zorder=2)
+            ax.errorbar(density_data["s_avg"], density_data["va_avg"],
+                        xerr=density_data["s_err"], yerr=density_data["va_err"],
+                        fmt="none", ecolor=line.get_color(), alpha=VA_VS_S_ERROR_ALPHA,
+                        elinewidth=1, capsize=3, zorder=1)
+
+    ax.set_xlabel("Fraccion del cluster mas grande (S)")
+    ax.set_ylabel("Parametro de orden (v_a)")
+    ax.set_title("v_a vs S - comparacion Vicsek vs votante")
+    ax.legend(ncol=2, fontsize="small")
+    fig.tight_layout()
     if output_path:
         fig.savefig(output_path, dpi=150)
         print(f"Guardado: {output_path}")
@@ -155,6 +193,8 @@ def main():
                                ylabel="Fraccion del cluster mas grande (S)",
                                title="S vs eta",
                                output_path=out(f"s_vs_eta_comparison_rho{density}.png"))
+
+    plot_va_vs_s_model_comparison(df, output_path=out("va_vs_s_model_comparison.png"))
 
 
 if __name__ == "__main__":

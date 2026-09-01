@@ -65,7 +65,17 @@ ParticleSystem::ParticleSystem(std::vector<Particle>& particles,
 
 long long ParticleSystem::benchmarkOnce(AlgorithmType algorithmType) {
     auto start = std::chrono::high_resolution_clock::now();
-    this->start(algorithmType);
+    // El benchmark debe medir solo la construccion de vecinos. start() tambien
+    // imprime por consola y escribe resources/interactions.txt, lo que sesgaria
+    // la comparacion de tiempos del CIM con TP1.
+    switch (algorithmType) {
+        case AlgorithmType::BRUTE_FORCE:
+            bruteForce();
+            break;
+        case AlgorithmType::CELL_INDEX_METHOD:
+            cellIndexMethod();
+            break;
+    }
     auto end = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 }

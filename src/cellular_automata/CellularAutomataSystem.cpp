@@ -1,14 +1,11 @@
 #define PARTICLE_RADIUS 0
 
-#include <stdexcept>
-#include <cmath>
-#include <vector>
-#include <fstream>
-
 #include <cellular_automata/CellularAutomataSystem.h>
 #include <cellular_automata/UpdateRule.h>
 #include <utils/UniformDoubleGenerator.h>
 #include <cell_index_method/ParticleSystem.h>
+
+#include <filesystem>
 
 namespace {
 struct DisjointSet {
@@ -102,13 +99,30 @@ void CellularAutomataSystem::step() {
     }
 }
 
-void CellularAutomataSystem::run(int steps) {
-    std::ofstream framesStream("resources/frames.txt");
-    std::ofstream observablesStream("resources/observables.txt");
+void CellularAutomataSystem::run(int steps, const std::string& outputDirectory, bool writeFrames) {
+    const std::filesystem::path directory(outputDirectory);
+    std::filesystem::create_directories(directory);
+
+    std::ofstream framesStream;
+    if (writeFrames) {
+        framesStream.open(directory / "frames.txt");
+    }
+    std::ofstream observablesStream(directory / "observables.txt");
+
+    if (!observablesStream) {
+        throw std::runtime_error("No se pudo abrir el archivo de observables: "
+                                 + (directory / "observables.txt").string());
+    }
+    if (writeFrames && !framesStream) {
+        throw std::runtime_error("No se pudo abrir el archivo de frames: "
+                                 + (directory / "frames.txt").string());
+    }
 
     for (int i = 0 ; i < steps ; i++) {
         step();
-        writeFrame(&framesStream);
+        if (writeFrames) {
+            writeFrame(&framesStream);
+        }
         writeObservablesLog(&observablesStream, i);
     }
 }
@@ -155,5 +169,9 @@ void CellularAutomataSystem::writeObservablesLog(std::ofstream* stream, int t) {
     double va = cumputeOrderParameter();
     double s = computeLargestClusterFraction();
     (*stream) << t << " " << va << " " << s << "\n";
+}
+
+long long CellularAutomataSystem::benchmark(cell_index_method::AlgorithmType algorithmType) {
+    return particleSystem.benchmarkOnce(algorithmType);
 }
 }
