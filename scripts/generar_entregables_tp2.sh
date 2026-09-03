@@ -23,7 +23,12 @@ CHARACTERISTIC_NOISE="${CHARACTERISTIC_NOISE:-1}"
 ANIMATION_STRIDE="${ANIMATION_STRIDE:-10}"
 ANIMATION_INTERVAL_MS="${ANIMATION_INTERVAL_MS:-100}"
 EXECUTABLE="$ROOT/build/apps/cellular_automata/cellular_automata_app"
-TP1_ROOT="${TP1_ROOT:-$ROOT/../ss-tp1}"
+if [[ -z "${TP1_ROOT:-}" ]]; then
+    TP1_ROOT="$ROOT/tp1"
+    if [[ ! -d "$TP1_ROOT" ]]; then
+        TP1_ROOT="$ROOT/../ss-tp1"
+    fi
+fi
 TP1_RUNS="${TP1_RUNS:-5}"
 TP1_WARMUP="${TP1_WARMUP:-30}"
 

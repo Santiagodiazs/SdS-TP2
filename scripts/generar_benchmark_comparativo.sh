@@ -9,7 +9,12 @@ cd "$ROOT"
 
 OUTPUT_DIR="${1:-tp2_resultados/benchmark}"
 [[ "$OUTPUT_DIR" = /* ]] || OUTPUT_DIR="$ROOT/$OUTPUT_DIR"
-TP1_ROOT="${TP1_ROOT:-$ROOT/../ss-tp1}"
+if [[ -z "${TP1_ROOT:-}" ]]; then
+    TP1_ROOT="$ROOT/tp1"
+    if [[ ! -d "$TP1_ROOT" ]]; then
+        TP1_ROOT="$ROOT/../ss-tp1"
+    fi
+fi
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 REPETITIONS="${REPETITIONS:-5}"
 WARMUP="${WARMUP:-30}"
@@ -30,9 +35,13 @@ mkdir -p "$OUTPUT_DIR" "$(dirname "$TP1_CSV")"
 echo "==> Compilando y ejecutando el benchmark de TP1"
 cmake -S "$TP1_ROOT" -B "$TP1_ROOT/build" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$TP1_ROOT/build" --parallel
+TP1_BENCHMARK_BIN="$TP1_ROOT/build/ss_tp1_benchmark"
+if [[ ! -x "$TP1_BENCHMARK_BIN" ]]; then
+    TP1_BENCHMARK_BIN="$TP1_ROOT/build/apps/benchmark/ss_tp1_benchmark"
+fi
 (
     cd "$TP1_ROOT"
-    ./build/apps/benchmark/ss_tp1_benchmark --runs "$REPETITIONS" --warmup "$WARMUP"
+    "$TP1_BENCHMARK_BIN" --runs "$REPETITIONS" --warmup "$WARMUP"
 )
 cp "$TP1_ROOT/resources/variacion_N_densidad_libre.csv" "$TP1_CSV"
 cp "$TP1_CSV" "$OUTPUT_DIR/variacion_N_densidad_libre_tp1.csv"

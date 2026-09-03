@@ -173,7 +173,7 @@ Para regenerar solo el punto (g), incluyendo el benchmark de TP1 desde cero:
 ```bash
 bash scripts/generar_benchmark_comparativo.sh
 ```
-Por defecto busca TP1 en `../ss-tp1`; se puede cambiar con `TP1_ROOT`.
+Por defecto usa una referencia local compacta en `tp1`, una sola carpeta con el benchmark del TP1 adaptado para reutilizar directamente las implementaciones ya presentes en TP2 (`board_generation`, `cell_index_method` y `utils`). Si no existe, hace fallback a `../ss-tp1` para compatibilidad. También se puede cambiar con `TP1_ROOT`.
 
 ## Orden recomendado para armar todo el TP
 
