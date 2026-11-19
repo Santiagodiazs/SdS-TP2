@@ -51,55 +51,49 @@ def plot_observable_vs_noise(df: pd.DataFrame, model: str, value_col: str, err_c
                               ylabel: str, title: str, output_path=None):
     fig, ax = plt.subplots(figsize=(7, 5))
     subset = df[df["model"] == model]
+    
+    # Filtrar solo densidades menores a 1 si estamos graficando S
+    densities = sorted(subset["density"].unique())
+    if value_col == "s_avg":
+        densities = [d for d in densities if d < 1.0]
 
-    for i, density in enumerate(sorted(subset["density"].unique())):
+    for i, density in enumerate(densities):
         density_data = subset[subset["density"] == density].sort_values("noise")
         ax.errorbar(density_data["noise"], density_data[value_col], yerr=density_data[err_col],
-                    marker=MARKERS[i % len(MARKERS)], label=f"rho={density}", capsize=3)
-
+                    marker=MARKERS[i % len(MARKERS)], label=f"rho={density:.4f}", capsize=3)
     ax.set_xlabel("Ruido (eta)")
     ax.set_ylabel(ylabel)
     ax.set_title(f"{title} - modelo {model}")
     ax.legend()
     fig.tight_layout()
-
     if output_path:
         fig.savefig(output_path, dpi=150)
-        print(f"Guardado: {output_path}")
-    else:
-        plt.show()
     plt.close(fig)
 
 
 def plot_va_vs_s(df: pd.DataFrame, model: str, output_path=None):
     fig, ax = plt.subplots(figsize=(7, 5))
     subset = df[df["model"] == model]
-
-    for i, density in enumerate(sorted(subset["density"].unique())):
-        # Unir los puntos en orden creciente de eta muestra la trayectoria
-        # del sistema en el plano (S, v_a) para cada densidad.
+    
+    # Solo consideramos densidades decimales (rho < 1)
+    low_densities = [d for d in sorted(subset["density"].unique()) if d < 1.0]
+    
+    for i, density in enumerate(low_densities):
         density_data = subset[subset["density"] == density].sort_values("noise")
         line, = ax.plot(density_data["s_avg"], density_data["va_avg"],
                         marker=MARKERS[i % len(MARKERS)], linestyle="-",
-                        label=f"rho={density}", zorder=2)
-        # Las barras se atenúan para que indiquen la dispersión sin ocultar
-        # la trayectoria central ni los marcadores.
+                        label=f"rho={density:.4f}", zorder=2)
         ax.errorbar(density_data["s_avg"], density_data["va_avg"],
                     xerr=density_data["s_err"], yerr=density_data["va_err"],
                     fmt="none", ecolor=line.get_color(), alpha=VA_VS_S_ERROR_ALPHA,
                     elinewidth=1, capsize=3, zorder=1)
-
     ax.set_xlabel("Fraccion del cluster mas grande (S)")
     ax.set_ylabel("Parametro de orden (v_a)")
     ax.set_title(f"v_a vs S - modelo {model}")
     ax.legend()
     fig.tight_layout()
-
     if output_path:
         fig.savefig(output_path, dpi=150)
-        print(f"Guardado: {output_path}")
-    else:
-        plt.show()
     plt.close(fig)
 
 
@@ -127,35 +121,78 @@ def plot_model_comparison(df: pd.DataFrame, density: float, value_col: str, err_
     plt.close(fig)
 
 
-def plot_va_vs_s_model_comparison(df: pd.DataFrame, output_path=None):
-    """Punto (f): compara ambos modelos en el plano (S, v_a)."""
-    fig, ax = plt.subplots(figsize=(8, 6))
+def plot_va_vs_s_model_comparison(df: pd.DataFrame, output_dir=None, output_path=None):
+    """Genera dos gráficos separados para va vs S (densidades bajas y altas)
+
+    Acepta tanto output_dir como output_path para mantener compatibilidad.
+    """
+    # Si se pasó output_path desde main(), extraemos su directorio padre
+    if output_path and not output_dir:
+        output_dir = Path(output_path).parent
+
     line_styles = {"vicsek": "-", "voter": "--"}
-    colors = {density: f"C{i}" for i, density in enumerate(sorted(df["density"].unique()))}
 
-    for density in sorted(df["density"].unique()):
-        for model in sorted(df["model"].unique()):
-            density_data = df[(df["density"] == density) & (df["model"] == model)].sort_values("noise")
-            line, = ax.plot(density_data["s_avg"], density_data["va_avg"],
-                            color=colors[density], linestyle=line_styles[model], marker="o",
-                            label=f"{model}, rho={density}", zorder=2)
-            ax.errorbar(density_data["s_avg"], density_data["va_avg"],
-                        xerr=density_data["s_err"], yerr=density_data["va_err"],
-                        fmt="none", ecolor=line.get_color(), alpha=VA_VS_S_ERROR_ALPHA,
-                        elinewidth=1, capsize=3, zorder=1)
+    for regime, density_filter in [
+        ("bajas", lambda d: d < 1.0),
+        ("altas", lambda d: d >= 1.0),
+    ]:
+        fig, ax = plt.subplots(figsize=(8, 6))
+        target_densities = [
+            d for d in sorted(df["density"].unique()) if density_filter(d)
+        ]
 
-    ax.set_xlabel("Fraccion del cluster mas grande (S)")
-    ax.set_ylabel("Parametro de orden (v_a)")
-    ax.set_title("v_a vs S - comparacion Vicsek vs votante")
-    ax.legend(ncol=2, fontsize="small")
-    fig.tight_layout()
-    if output_path:
-        fig.savefig(output_path, dpi=150)
-        print(f"Guardado: {output_path}")
-    else:
-        plt.show()
-    plt.close(fig)
+        if not target_densities:
+            plt.close(fig)
+            continue
 
+        colors = {
+            density: f"C{i}" for i, density in enumerate(target_densities)
+        }
+
+        for density in target_densities:
+            for model in sorted(df["model"].unique()):
+                density_data = df[
+                    (df["density"] == density) & (df["model"] == model)
+                ].sort_values("noise")
+                line = ax.plot(
+                    density_data["s_avg"],
+                    density_data["va_avg"],
+                    color=colors[density],
+                    linestyle=line_styles[model],
+                    marker="o",
+                    label=f"{model}, rho={density:.2f}",
+                    zorder=2,
+                )[0]
+                ax.errorbar(
+                    density_data["s_avg"],
+                    density_data["va_avg"],
+                    xerr=density_data["s_err"],
+                    yerr=density_data["va_err"],
+                    fmt="none",
+                    ecolor=line.get_color(),
+                    alpha=VA_VS_S_ERROR_ALPHA,
+                    elinewidth=1,
+                    capsize=3,
+                    zorder=1,
+                )
+
+        ax.set_xlabel("Fraccion del cluster mas grande (S)")
+        ax.set_ylabel("Parametro de orden (v_a)")
+        ax.set_title(
+            f"v_a vs S - comparacion Vicsek vs votante (Densidades {regime})"
+        )
+        ax.legend(ncol=2, fontsize="small")
+        fig.tight_layout()
+
+        if output_dir:
+            out_file = str(
+                Path(output_dir) / f"va_vs_s_model_comparison_{regime}.png"
+            )
+            fig.savefig(out_file, dpi=150)
+            print(f"Guardado: {out_file}")
+        else:
+            plt.show()
+        plt.close(fig)
 
 def main():
     if len(sys.argv) < 2:
@@ -167,7 +204,8 @@ def main():
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    raw_df = load_summary(input_path)
+    raw_df = load_summary(input_path) 
+
     df = aggregate_over_seeds(raw_df)
 
     def out(name):

@@ -1,0 +1,10 @@
+\babel@toc {spanish}{}\relax 
+\beamer@sectionintoc {1}{Introducción}{2}{0}{1}
+\beamer@sectionintoc {2}{Implementación}{5}{0}{2}
+\beamer@sectionintoc {3}{Simulaciones}{8}{0}{3}
+\beamer@sectionintoc {4}{Resultados}{11}{0}{4}
+\beamer@subsectionintoc {4}{1}{Polarización}{12}{0}{4}
+\beamer@subsectionintoc {4}{2}{Clusters}{15}{0}{4}
+\beamer@subsectionintoc {4}{3}{Polarización y clusters}{19}{0}{4}
+\beamer@subsectionintoc {4}{4}{Tiempos del CIM}{21}{0}{4}
+\beamer@sectionintoc {5}{Conclusiones}{22}{0}{5}

@@ -1,6 +1,6 @@
 #include <board_generation/Tablero.h>
 
-#include <Utils/UniformDoubleGenerator.h>
+#include <utils/UniformDoubleGenerator.h>
 
 #include <cmath>
 #include <fstream>

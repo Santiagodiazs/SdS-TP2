@@ -17,26 +17,36 @@ MODEL_STYLES = {"vicsek": "-", "voter": "--"}
 
 
 def plot_comparison(series, observable_index, ylabel, title, output_path):
-    fig, ax = plt.subplots(figsize=(9, 5))
-    colors = {density: f"C{index}" for index, density in
-              enumerate(sorted({item[1] for item in series}))}
-
-    for model, density, t_vals, va_vals, s_vals in sorted(series, key=lambda item: (item[1], item[0])):
-        values = va_vals if observable_index == 0 else s_vals
-        start = detect_steady_state_start(values)
-        line, = ax.plot(t_vals, values, color=colors[density], linestyle=MODEL_STYLES[model],
-                        linewidth=1.2, label=fr"{model.capitalize()}, $\rho={density:g}$")
-        ax.axvline(t_vals[start], color=line.get_color(), linestyle=MODEL_STYLES[model], alpha=0.35)
-
-    ax.set_xlabel("Paso temporal (t)")
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.legend(ncol=2, fontsize="small")
-    ax.grid(alpha=0.2)
-    fig.tight_layout()
-    fig.savefig(output_path, dpi=150)
-    plt.close(fig)
-    print(f"Guardado: {output_path}")
+    # Separar series en densidades bajas (< 1) y altas (>= 1)
+    groups = {
+        "bajas": [s for s in series if s[1] < 1.0],
+        "altas": [s for s in series if s[1] >= 1.0]
+    }
+    
+    for tag, sub_series in groups.items():
+        if not sub_series:
+            continue
+        fig, ax = plt.subplots(figsize=(9, 5))
+        densities = sorted({item[1] for item in sub_series})
+        colors = {density: f"C{index}" for index, density in enumerate(densities)}
+        
+        for model, density, t_vals, va_vals, s_vals in sorted(sub_series, key=lambda item: (item[1], item[0])):
+            values = va_vals if observable_index == 0 else s_vals
+            start = detect_steady_state_start(values)
+            line, = ax.plot(t_vals, values, color=colors[density], linestyle=MODEL_STYLES[model],
+                            linewidth=1.2, label=fr"{model.capitalize()}, $\rho={density:g}$")
+            ax.axvline(t_vals[start], color=line.get_color(), linestyle=MODEL_STYLES[model], alpha=0.35)
+            
+        ax.set_xlabel("Paso temporal (t)")
+        ax.set_ylabel(ylabel)
+        ax.set_title(f"{title} (Densidades {tag})")
+        ax.legend(ncol=2, fontsize="small")
+        ax.grid(alpha=0.2)
+        fig.tight_layout()
+        
+        out_name = f"{output_path}_{tag}.png"
+        fig.savefig(out_name, dpi=150)
+        plt.close(fig)
 
 
 def main():

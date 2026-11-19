@@ -1,0 +1,243 @@
+% TP2, Autómatas celulares off-lattice. Estilo tomado de la presentación del TP5.
+% Compilar: pdflatex document.tex (dos veces). Figuras: venv/bin/python presentacion/generar_figuras.py
+% Fuente de datos: tp2_resultados/ (sweep_summary.csv, datos_caracteristicos/, benchmark/). No se re-simuló.
+% Los MP4 se reproducen sobre el póster en un visor compatible (Okular, Acrobat).
+% Para entregar: \entregatrue y completar las URLs públicas (YouTube/Vimeo).
+\documentclass[aspectratio=169,20pt]{beamer}
+\geometry{paperwidth=320mm,paperheight=180mm}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usefonttheme{professionalfonts}
+\usefonttheme[onlymath]{serif}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb,graphicx,booktabs,tikz,multimedia}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usetheme{Frankfurt}
+\usecolortheme{beaver}
+\definecolor{darkred}{RGB}{153,0,0}
+\definecolor{VI}{RGB}{31,119,180}
+\definecolor{VO}{RGB}{214,39,40}
+\setbeamercolor{frametitle}{bg=gray!8,fg=darkred}
+\setbeamercolor{title}{fg=darkred}
+\setbeamercolor{structure}{fg=darkred}
+\setbeamercolor{section in head/foot}{bg=darkred,fg=white}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{blocks}[default]
+\setbeamersize{text margin left=12mm,text margin right=12mm}
+\setbeamerfont{frametitle}{size=\fontsize{28}{33}\selectfont}
+\setbeamerfont{title}{size=\fontsize{34}{40}\selectfont}
+\newif\ifentrega\entregafalse
+% Links públicos de las animaciones (completar para la entrega)
+\newcommand{\urlVI}{}
+\newcommand{\urlVO}{}
+\setbeamertemplate{headline}{\begin{beamercolorbox}[wd=\paperwidth,ht=7mm,dp=2mm,leftskip=12mm]{section in head/foot}\fontsize{15}{18}\selectfont\insertsectionhead\end{beamercolorbox}}
+\setbeamertemplate{footline}{\hbox{\begin{beamercolorbox}[wd=.85\paperwidth,ht=6mm,dp=2mm,leftskip=12mm]{section in head/foot}\fontsize{13}{16}\selectfont Grupo 11\quad Autómatas celulares off-lattice\end{beamercolorbox}\begin{beamercolorbox}[wd=.15\paperwidth,ht=6mm,dp=2mm,rightskip=8mm plus1fil]{section in head/foot}\fontsize{13}{16}\selectfont\insertpagenumber/\inserttotalframenumber\end{beamercolorbox}}}
+\setbeamertemplate{itemize items}[circle]
+\setlength{\parskip}{4mm}
+\newcommand{\vb}[1]{\mathbf{#1}}
+\newcommand{\notaBreve}[1]{{\fontsize{18}{22}\selectfont #1}}
+% Figura (2/3 del ancho) con condiciones fijas al costado: {título}{archivo}{texto lateral}
+\newcommand{\grafico}[3]{\begin{frame}{#1}\begin{columns}[c]
+ \begin{column}{.68\textwidth}\centering\includegraphics[width=\textwidth,height=.80\textheight,keepaspectratio]{figuras/#2}\end{column}
+ \begin{column}{.30\textwidth}\notaBreve{#3}\end{column}\end{columns}\end{frame}}
+% Animación: póster en el PDF de entrega con link; MP4 embebido en la versión para exponer.
+\newcommand{\anim}[3]{\ifentrega\includegraphics[height=.62\textheight]{figuras/#1.png}\par
+ \ifx#3\empty\notaBreve{\textcolor{magenta}{(insertar link)}}\else\notaBreve{\expandafter\url\expandafter{#3}}\fi
+ \else\movie[poster,showcontrols]{\includegraphics[height=.62\textheight]{figuras/#1.png}}{figuras/#1.mp4}\fi\par\notaBreve{#2}}
+% Comparación Vicsek | Votante con los mismos ejes: {título}{prefijo}{parámetros}
+\newcommand{\comparacion}[3]{\begin{frame}{#1}\centering
+ \begin{tabular}{@{}l@{\hspace{8mm}}l@{}}\hspace{20mm}\textcolor{VI}{Vicsek}&\hspace{14mm}\textcolor{VO}{Votante}\\
+ \includegraphics[height=.68\textheight]{figuras/#2_vicsek.png}&\includegraphics[height=.68\textheight]{figuras/#2_voter.png}\end{tabular}
+ \par\vspace{1mm}\notaBreve{#3}\end{frame}}
+% Dos animaciones lado a lado: {título}{a}{rótulo a}{url a}{b}{rótulo b}{url b}{parámetros}
+\newcommand{\animpar}[8]{\begin{frame}{#1}\begin{columns}[T]
+ \begin{column}{.49\textwidth}\centering\anim{#2}{#3}{#4}\end{column}
+ \begin{column}{.49\textwidth}\centering\anim{#5}{#6}{#7}\end{column}\end{columns}
+ \vfill\notaBreve{#8}\end{frame}}
+\tikzset{bloque/.style={draw=darkred,thick,align=center,minimum height=15mm,text width=72mm},flecha/.style={->,very thick,>=Stealth}}
+\AtBeginSection[]{\begin{frame}\centering\usebeamerfont{title}\textcolor{darkred}{\insertsectionhead}\end{frame}}
+\title{Autómatas celulares off-lattice}
+\subtitle{Bandadas de agentes autopropulsados: Vicsek y votante}
+\author{Grupo 11\\Santiago Diaz -- 63058\quad Lautaro Gazzaneo -- 61484\\Luca Maximiliano Rossi -- 63730}
+\institute{Simulación de Sistemas -- ITBA}
+\date{18 de noviembre de 2026}
+\begin{document}
+\begin{frame}\titlepage\end{frame}
+
+\section{Introducción}
+\begin{frame}{Sistema real: bandadas}
+\begin{columns}[c]
+\begin{column}{.48\textwidth}
+\begin{itemize}\setlength{\itemsep}{3mm}
+\item Aves, cardúmenes, bacterias, robots
+\item Cada agente se mueve a rapidez constante
+\item Solo interactúa con vecinos cercanos
+\item Emerge (o no) un movimiento colectivo ordenado
+\end{itemize}
+\end{column}
+\begin{column}{.48\textwidth}
+\[
+ \vb x_i(t+\Delta t)=\vb x_i(t)+\vb v_i(t+\Delta t)\,\Delta t
+\]
+\[
+ \vb v_i=v_0\,(\cos\theta_i,\ \sin\theta_i)
+\]
+\[
+ \mathcal N_i(t)=\{j\neq i:\ \|\vb x_i-\vb x_j\|\le r_c\}
+\]
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Reglas de actualización del ángulo}
+\begin{columns}[T]
+\begin{column}{.49\textwidth}
+\textcolor{VI}{Vicsek: promedio de vecinos}
+\[
+ \theta_i(t+\Delta t)=\operatorname{atan2}\!\Big(\langle\sin\theta\rangle_{r_c},\,\langle\cos\theta\rangle_{r_c}\Big)+\Delta\theta_i
+\]
+\notaBreve{$\langle\cdot\rangle_{r_c}$: promedio sobre $\mathcal N_i\cup\{i\}$.}
+\end{column}
+\begin{column}{.49\textwidth}
+\textcolor{VO}{Votante: copia de un vecino}
+\[
+ \theta_i(t+\Delta t)=\theta_{j}(t)+\Delta\theta_i,\qquad j\sim\mathcal U(\mathcal N_i)
+\]
+\notaBreve{Si $\mathcal N_i=\varnothing$, conserva su ángulo: $\theta_j=\theta_i$.}
+\end{column}
+\end{columns}
+\vspace{8mm}
+\[
+ \Delta\theta_i\sim\mathcal U\!\left[-\tfrac{\eta}{2},\,\tfrac{\eta}{2}\right]\qquad\eta:\ \text{amplitud del ruido}
+\]
+\end{frame}
+
+\section{Implementación}
+\begin{frame}{Arquitectura del motor}
+\centering
+\begin{tikzpicture}
+\node[bloque] (sys) at (0,0) {CellularAutomataSystem\\\notaBreve{step(), observables}};
+\node[bloque] (rule) at (16,0) {UpdateRule\\\notaBreve{computeNewAngle()}};
+\node[bloque] (cim) at (0,-4) {ParticleSystem\\\notaBreve{Cell Index Method}};
+\node[bloque] (p) at (0,-8) {Particle\\\notaBreve{$\vb x$, $\theta$, $\vb v$, vecinos}};
+\node[bloque,text width=48mm] (vi) at (12.5,-4.5) {\textcolor{VI}{VicsekRule}};
+\node[bloque,text width=48mm] (vo) at (19.5,-4.5) {\textcolor{VO}{VoterRule}};
+\draw[flecha] (sys)--(rule);
+\draw[flecha] (sys)--(cim);
+\draw[flecha] (cim)--(p);
+\draw[flecha,dashed] (vi.north)--(vi.north |- rule.south);
+\draw[flecha,dashed] (vo.north)--(vo.north |- rule.south);
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Un paso de simulación}
+\begin{columns}[c]
+\begin{column}{.55\textwidth}
+\begin{enumerate}\setlength{\itemsep}{3mm}
+\item CIM con contorno periódico: $\mathcal N_i$ para todo $i$
+\item Para cada $i$: $\theta_i^{\,\mathrm{nuevo}}=\text{regla}(\theta_i,\mathcal N_i,\eta)$
+\item Recién entonces, para cada $i$:
+\[ \theta_i\leftarrow\theta_i^{\,\mathrm{nuevo}},\quad \vb x_i\leftarrow(\vb x_i+\vb v_i\Delta t)\bmod L \]
+\item Registrar $v_a(t)$ y $S(t)$
+\end{enumerate}
+\end{column}
+\begin{column}{.42\textwidth}\centering
+\begin{tikzpicture}[x=9mm,y=9mm]
+\foreach \i in {0,...,5}{\draw[gray!60] (\i,0)--(\i,5);\draw[gray!60] (0,\i)--(5,\i);}
+\fill[darkred!25] (2,2) rectangle (3,3);
+\fill[darkred!10] (2,3) rectangle (4,4); \fill[darkred!10] (3,2) rectangle (4,3); \fill[darkred!10] (3,1) rectangle (4,2);
+\draw[thick] (0,0) rectangle (5,5);
+\fill[darkred] (2.5,2.5) circle (.08);
+\draw[dashed,darkred,thick] (2.5,2.5) circle (1);
+\draw[<->] (0,-.4)--node[below]{$L/M\ge r_c$}(1,-.4);
+\end{tikzpicture}
+\par\notaBreve{Celda propia y 4 vecinas; pares guardados en ambos sentidos.}
+\end{column}
+\end{columns}
+\end{frame}
+
+\section{Simulaciones}
+\begin{frame}{Sistema y parámetros}
+\begin{columns}[c]
+\begin{column}{.40\textwidth}\centering
+\begin{tikzpicture}[x=11mm,y=11mm]
+\draw[very thick,dashed] (0,0) rectangle (6,6);
+\foreach \x/\y/\a in {1/4/20,2/2/40,4/5/-10,5/3/30,3/4/10,4.5/1.5/60,1.5/1/0,3.2/2.8/25}{\draw[-{Stealth},VI,thick] (\x,\y)--++(\a:.6);}
+\draw[darkred,thick] (3.2,2.8) circle (1);
+\draw[darkred] (3.2,2.8)--node[above,pos=.7]{$r_c$}++(200:1);
+\draw[<->] (-.5,0)--node[left]{$L$}(-.5,6);
+\node[below] at (3,-.1){\notaBreve{Contorno periódico}};
+\end{tikzpicture}
+\end{column}
+\begin{column}{.57\textwidth}
+{\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{@{}ll@{}}
+\multicolumn{2}{@{}l}{\textcolor{darkred}{Fijos}}\\
+$L=10$ & $v_0=0{,}03$\\
+$r_c=1$ & $\Delta t=1$\\
+2000 pasos & \\[4mm]
+\multicolumn{2}{@{}l}{\textcolor{darkred}{Variables}}\\
+Modelo & Vicsek, votante\\
+$\rho$ & $\frac{1}{3\pi},\ \frac{1}{2\pi},\ \frac{1}{\pi},\ 2,\ 4,\ 8$\\
+$N$ & $10,\ 15,\ 31,\ 200,\ 400,\ 800$\\
+$\eta$ & $0;\ 0{,}5;\ \ldots;\ 5$ rad\\
+\end{tabular}}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Observables}
+\[
+ v_a(t)=\frac{1}{N v_0}\left\|\sum_{i=1}^{N}\vb v_i(t)\right\|\qquad
+ S(t)=\frac{N_{\max}(t)}{N}
+\]
+\notaBreve{$N_{\max}$: partículas del mayor cluster (unidas por cadenas de vecinos a distancia $\le r_c$)}
+\[
+ \overline{v_a}^{(k)}=\frac{1}{T-t_e}\sum_{t=t_e}^{T-1}v_a^{(k)}(t)\qquad
+ \langle v_a\rangle=\frac1M\sum_{k=1}^{M}\overline{v_a}^{(k)}\qquad
+ \sigma=\sqrt{\frac{1}{M-1}\sum_{k=1}^{M}\left(\overline{v_a}^{(k)}-\langle v_a\rangle\right)^2}
+\]
+\notaBreve{$T=2000$}
+\end{frame}
+
+\section{Resultados}
+\subsection{Polarización}
+\animpar{Animaciones}{anim_vicsek_etabaja}{\textcolor{VI}{Vicsek}}{\urlVI}{anim_voter_etabaja}{\textcolor{VO}{Votante}}{\urlVO}{$\rho=4$\qquad$\eta=0{,}5$ rad}
+
+\comparacion{Evolución del parámetro de orden}{evol_va}{$\eta=1$ rad\qquad Línea vertical: inicio del estacionario}
+
+\comparacion{Parámetro de orden vs. ruido}{va_vs_eta}{$M=5$ realizaciones}
+
+
+\subsection{Clusters}
+
+\comparacion{Evolución de la fracción del cluster mayor: $\rho=2,4,8$}{evol_s_altas}{$\eta=1$ rad\qquad Línea vertical: inicio del estacionario}
+
+\comparacion{Evolución de la fracción del cluster mayor: $\rho<1$}{evol_s_bajas}{$\eta=1$ rad\qquad Línea vertical: inicio del estacionario}
+
+\comparacion{Fracción del cluster mayor vs. ruido: $\rho=2,4,8$}{s_vs_eta_altas}{$M=5$ realizaciones}
+
+\comparacion{Fracción del cluster mayor vs. ruido: $\rho<1$}{s_vs_eta_bajas}{$M=5$ realizaciones}
+
+\subsection{Polarización y clusters}
+\comparacion{Parámetro de orden vs. fracción del cluster mayor: $\rho=2,4,8$}{va_vs_s_altas}{$M=5$ realizaciones}
+
+\comparacion{Parámetro de orden vs. fracción del cluster mayor: $\rho<1$}{va_vs_s_bajas}{$M=5$ realizaciones}
+
+\subsection{Tiempos del CIM}
+\grafico{Cell Index Method: tiempo de búsqueda}{benchmark.png}{$L=20$\par $13\times13$ celdas\par 5 repeticiones}
+
+\section{Conclusiones}
+\begin{frame}{Conclusiones}
+\begin{itemize}\setlength{\itemsep}{4mm}
+\item Vicsek mantiene el orden hasta ruidos mucho mayores que el votante
+\item Al aumentar la densidad, Vicsek se ordena más y el votante menos
+\item A baja densidad, el ruido fragmenta el grupo y el orden cae junto con el cluster mayor
+\item A alta densidad, el sistema queda siempre conectado: se desordena sin fragmentarse
+\item El CIM es un orden de magnitud más rápido que fuerza bruta y sus tiempos son similares a los del TP1
+\end{itemize}
+\end{frame}
+
+\begin{frame}\centering\usebeamerfont{title}\textcolor{darkred}{Muchas gracias}\end{frame}
+\end{document}
